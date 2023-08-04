@@ -68,7 +68,7 @@ def plot_scatter_with_labels(df):
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_2/model.pth'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_2/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()

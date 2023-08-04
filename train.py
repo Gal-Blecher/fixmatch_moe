@@ -15,9 +15,9 @@ def train_vib(model, dataset):
         logger.info(to_log)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     path = './models/' + setup['experiment_name']
-    if device == 'cuda':
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
+    # if device == 'cuda':
+    #     model = torch.nn.DataParallel(model)
+    #     cudnn.benchmark = True
     model = model.to(device)
     logger.info(f'training with device: {device}')
     criterion = nn.CrossEntropyLoss()
@@ -45,7 +45,7 @@ def train_vib(model, dataset):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             if batch_idx % 50 == 0:
-                logger.info(f'batch_idx: {batch_idx}, loss: {loss.item()}')
+                logger.info(f'batch_idx: {batch_idx}, loss: {round(loss.item(), 4)}')
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
@@ -54,15 +54,12 @@ def train_vib(model, dataset):
         acc_test = vib_test(dataset['test_loader'], model)
         model.test_acc.append(acc_test)
         logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
-        with open(f"{path}/current_epoch.txt", "w") as file:
-            file.write(f'{epoch}')
         if acc_test == max(model.test_acc):
+            model = model.to('cpu')
             logger.info('--------------------------------------------saving model--------------------------------------------')
             torch.save(model, f'{path}/model.pkl')
-        if early_stop(model.test_acc):
-            with open(f'{path}/acc_test.pkl', 'wb') as f:
-                pickle.dump(model.test_acc, f)
-            return
+            model = model.to(device)
+
 
 def moe_train_vib(model, dataset):
     logger = get_logger(setup['experiment_name'])
