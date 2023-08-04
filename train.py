@@ -15,9 +15,6 @@ def train_vib(model, dataset):
         logger.info(to_log)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     path = './models/' + setup['experiment_name']
-    # if device == 'cuda':
-    #     model = torch.nn.DataParallel(model)
-    #     cudnn.benchmark = True
     model = model.to(device)
     logger.info(f'training with device: {device}')
     criterion = nn.CrossEntropyLoss()
@@ -55,10 +52,8 @@ def train_vib(model, dataset):
         model.test_acc.append(acc_test)
         logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
         if acc_test == max(model.test_acc):
-            model = model.to('cpu')
             logger.info('--------------------------------------------saving model--------------------------------------------')
-            torch.save(model, f'{path}/model.pkl')
-            model = model.to(device)
+            torch.save(model.state_dict(), f'{path}/model.pkl')
 
 
 def moe_train_vib(model, dataset):

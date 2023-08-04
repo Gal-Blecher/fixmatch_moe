@@ -13,7 +13,7 @@ import nets
 def load_model(setup_dict):
     # Create an instance of the model
     model = nets.VIBNet(42)
-    state_dict = torch.load(setup_dict['load_path'], map_location=torch.device('cpu'))
+    state_dict = torch.load(setup_dict['load_path'])
     model.load_state_dict(state_dict)
     model.eval()
     return model
@@ -68,7 +68,7 @@ def plot_scatter_with_labels(df):
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_2/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_3/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
