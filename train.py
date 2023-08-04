@@ -46,7 +46,6 @@ def train_vib(model, dataset):
             correct += predicted.eq(targets).sum().item()
             if batch_idx % 50 == 0:
                 logger.info(f'batch_idx: {batch_idx}, loss: {loss.item()}')
-            break
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
