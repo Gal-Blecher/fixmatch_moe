@@ -12,10 +12,12 @@ setup = {'n_epochs': 200,
          'latent_dim': 32,
          'dataset_name': 'cifar10',
          'n_experts': 1,
-         'experiment_name': 'vib_6',
+         'experiment_name': 'vib_7',
          'model_eval_path': None,
          'ssl_labels': 1000,
          'label_all': False,
          'labeled_only': False,
-         'unlabeled_only': True
+         'unlabeled_only': True,
+         'confidence_th': 0.5,
+         'unsupervised_loss_coeff': 1.0
          }

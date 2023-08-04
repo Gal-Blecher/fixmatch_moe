@@ -7,26 +7,19 @@ import torchvision
 import torchvision.transforms as transforms
 
 
+
 def get_dataset():
     dataset_name = setup['dataset_name']
     if dataset_name == 'cifar10':
         n_labels = setup['ssl_labels']
         batch_size = setup['batch_size']
         print(f'==> Preparing data cifar10')
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
+        tensor_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
 
         full_trainset = torchvision.datasets.CIFAR10(
-            root='./data', train=True, download=True, transform=transform_train)
+            root='./data', train=True, download=True, transform=tensor_transform)
 
         # Splitting the dataset into labeled and unlabeled parts
         labeled_subset, unlabeled_subset = torch.utils.data.random_split(full_trainset,
@@ -39,7 +32,7 @@ def get_dataset():
             unlabeled_subset, batch_size=batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.CIFAR10(
-            root='./data', train=False, download=True, transform=transform_test)
+            root='./data', train=False, download=True, transform=tensor_transform)
         test_loader = torch.utils.data.DataLoader(
             testset, batch_size=100, shuffle=False, num_workers=2)
 
