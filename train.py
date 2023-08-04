@@ -66,8 +66,8 @@ def train_vib(model, dataset):
             labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
             labeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
             # plot_augmented_images(labeled_weak_augmented_images, labeled_strong_augmented_images)
-            labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images)
-            labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images)
+            labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
+            labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
             weak_labeled_z, weak_labeled_classification = model(labeled_weak_augmented_tensors)
             strong_labeled_z, strong_labeled_classification = model(labeled_strong_augmented_tensors)
             supervised_loss = criterion(weak_labeled_classification, targets) + setup['kl_vib_coeff'] * model.kl_loss.mean()
@@ -78,8 +78,8 @@ def train_vib(model, dataset):
             unlabeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
             unlabeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
             # plot_augmented_images(unlabeled_weak_augmented_images, unlabeled_strong_augmented_images)
-            unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images)
-            unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images)
+            unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
+            unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
             strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
             _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
