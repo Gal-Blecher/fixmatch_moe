@@ -1,7 +1,7 @@
 
 
 
-setup = {'n_epochs': 5,
+setup = {'n_epochs': 2,
          'batch_size': 128,
          'lr': 0.1,
          'router_lr': 0.1,

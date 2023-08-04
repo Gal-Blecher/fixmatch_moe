@@ -57,10 +57,8 @@ def train_vib(model, dataset):
         with open(f"{path}/current_epoch.txt", "w") as file:
             file.write(f'{epoch}')
         if acc_test == max(model.test_acc):
-            model.to('cpu')
             logger.info('--------------------------------------------saving model--------------------------------------------')
-            torch.save(model, f'{path}/model.pth')
-            model.to(device)
+            torch.save(model, f'{path}/model.pkl')
         if early_stop(model.test_acc):
             with open(f'{path}/acc_test.pkl', 'wb') as f:
                 pickle.dump(model.test_acc, f)
