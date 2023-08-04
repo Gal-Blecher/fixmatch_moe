@@ -3,8 +3,8 @@
 
 setup = {'n_epochs': 200,
          'batch_size': 128,
-         'lr': 0.1,
-         'router_lr': 0.1,
+         'lr': 0.01,
+         'router_lr': 0.01,
          'kl_coeff': 0,
          'experts_coeff': 1.0,
          'expert_type': 'VIBNet',
@@ -18,6 +18,6 @@ setup = {'n_epochs': 200,
          'label_all': False,
          'labeled_only': False,
          'unlabeled_only': True,
-         'confidence_th': 0.5,
+         'confidence_th': 0.9,
          'unsupervised_loss_coeff': 1.0
          }
