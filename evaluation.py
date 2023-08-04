@@ -7,13 +7,12 @@ import matplotlib.pyplot as plt
 import datasets
 import build
 from config import setup
+import nets
 
 
 def load_model(setup_dict):
     # Create an instance of the model
-    model = build.build_model()
-    if setup['n_experts'] == 1:
-        model = model.expert1
+    model = nets.VIBNet(42)
     state_dict = torch.load(setup_dict['load_path'])
     model.load_state_dict(state_dict)
     model.eval()
