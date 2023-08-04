@@ -13,7 +13,7 @@ import nets
 def load_model(setup_dict):
     # Create an instance of the model
     model = nets.VIBNet(42)
-    state_dict = torch.load(setup_dict['load_path'])
+    state_dict = torch.load(setup_dict['load_path'], map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
     model.eval()
     return model
