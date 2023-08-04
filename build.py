@@ -24,7 +24,6 @@ class AdditiveAttention(nn.Module):
 
     def __init__(self) -> None:
         super(AdditiveAttention, self).__init__()
-        expert_type = setup['expert_type']
         emb_dim = setup['latent_dim']
         self.query_proj = nn.Linear(emb_dim, emb_dim, bias=False)
         self.key_proj = nn.Linear(emb_dim, emb_dim, bias=False)

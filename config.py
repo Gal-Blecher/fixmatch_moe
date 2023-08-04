@@ -14,7 +14,7 @@ setup = {'n_epochs': 200,
          'n_experts': 1,
          'experiment_name': 'vib_5',
          'model_eval_path': None,
-         'ssl_labels': 49_900,
+         'ssl_labels': 1000,
          'label_all': False,
          'labeled_only': False,
          'unlabeled_only': True

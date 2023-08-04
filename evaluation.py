@@ -18,16 +18,14 @@ def load_model(setup_dict):
     model.eval()
     return model
 
-def two_dims_from_z(setup_dict, model):
+def two_dims_from_z(dataset, model):
     df = pd.DataFrame(columns=['x', 'y', 'label'])
-    all_z = []  # To store all the z values
-    all_labels = []  # To store all the labels
+    all_z = []
+    all_labels = []
 
-    with torch.no_grad():  # Disable gradient computation
-        for images, labels in dataloader:
-            mu, logvar = model.encode(images)
-            z = model.reparameterize(mu, logvar)
-
+    with torch.no_grad():
+        for images, labels in dataset['test_loader']:
+            z, classification_output = model(images)
             all_z.append(z)
             all_labels += labels.tolist()
 
@@ -37,7 +35,7 @@ def two_dims_from_z(setup_dict, model):
         all_labels = np.array(all_labels)
 
         # Reduce dimensionality of z to 2 using t-SNE
-        tsne = TSNE(n_components=2, random_state=42, n_iter=10000, learning_rate=200.0)
+        tsne = TSNE(n_components=2, random_state=42)
         reduced_z = tsne.fit_transform(all_z)
 
         # Create the DataFrame with reduced z values and labels
@@ -54,8 +52,9 @@ def plot_scatter_with_labels(df):
         plt.scatter(
             df[df['label'] == label]['x'],
             df[df['label'] == label]['y'],
-            label=f'Label {label}',
-            alpha=0.7
+            label=f'{label}',
+            alpha=0.7,
+            edgecolors='k'
         )
     plt.title('t-SNE Plot of Latent Space (z)')
     plt.xlabel('Dimension 1 (x)')
@@ -68,9 +67,10 @@ def plot_scatter_with_labels(df):
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_4/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_5/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
-    low_dim_data = two_dims_from_z(setup_dict, model)
+    low_dim_data = two_dims_from_z(dataset, model)
+    plot_scatter_with_labels(low_dim_data)
     t=1
