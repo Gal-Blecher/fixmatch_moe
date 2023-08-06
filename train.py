@@ -102,7 +102,7 @@ def train_vib(model, dataset):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             if batch_idx % 50 == 0:
-                logger.info(f'batch_idx: {batch_idx}, loss: {round(loss.item(), 4)}')
+                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
             batch_idx += 1
         acc_train = round((correct/(total+0.00001))*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
