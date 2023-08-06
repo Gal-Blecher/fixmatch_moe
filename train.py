@@ -35,11 +35,6 @@ def train_vib(model, dataset):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
-
-
-    labeled_iter = iter(cycle(dataset['labeled_loader']))
-    unlabeled_iter = iter(dataset['unlabeled_loader'])
-
     logger = get_logger(setup['experiment_name'])
     for key, value in setup.items():
         to_log = str(key) + ': ' + str(value)
@@ -54,6 +49,8 @@ def train_vib(model, dataset):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=setup['n_epochs'])
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
+        labeled_iter = iter(cycle(dataset['labeled_loader']))
+        unlabeled_iter = iter(dataset['unlabeled_loader'])
         model.train()
         running_loss = 0
         correct = 0
@@ -64,12 +61,12 @@ def train_vib(model, dataset):
             labeled_inputs, targets = labeled_data[0].to(device), labeled_data[1].to(device)
             pil_images = tensors_to_pil_images(tensor_batch=labeled_inputs)
             labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
-            labeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
+            # labeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
             # plot_augmented_images(labeled_weak_augmented_images, labeled_strong_augmented_images)
             labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
-            labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
+            # labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
             weak_labeled_z, weak_labeled_classification = model(labeled_weak_augmented_tensors)
-            strong_labeled_z, strong_labeled_classification = model(labeled_strong_augmented_tensors)
+            # strong_labeled_z, strong_labeled_classification = model(labeled_strong_augmented_tensors)
             supervised_loss = criterion(weak_labeled_classification, targets) + setup['kl_vib_coeff'] * model.kl_loss.mean()
 
             # unlabeled batch
