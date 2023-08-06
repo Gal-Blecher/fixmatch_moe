@@ -1,7 +1,7 @@
 
 
 
-setup = {'n_epochs': 200,
+setup = {'n_epochs': 100,
          'batch_size': 128,
          'lr': 0.01,
          'router_lr': 0.01,
@@ -12,7 +12,7 @@ setup = {'n_epochs': 200,
          'latent_dim': 32,
          'dataset_name': 'cifar10',
          'n_experts': 1,
-         'experiment_name': 'vib_9',
+         'experiment_name': 'vib_10',
          'model_eval_path': None,
          'ssl_labels': 1000,
          'label_all': False,
