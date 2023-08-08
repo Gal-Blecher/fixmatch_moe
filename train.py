@@ -25,13 +25,19 @@ def train_vib(model, dataset):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
+    # strong_transforms = transforms.Compose([
+    #     transforms.RandomCrop(32, padding=4),
+    #     transforms.RandomResizedCrop(size=(32, 32)),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+    #     transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2)),
+    #     transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    # ])
     strong_transforms = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomResizedCrop(size=(32, 32)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-        transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2)),
-        transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3),
+        transforms.ToPILImage(),
+        transforms.RandAugment(num_ops=2, magnitude=20),
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
@@ -62,7 +68,7 @@ def train_vib(model, dataset):
             labeled_inputs, targets = labeled_data[0].to(device), labeled_data[1].to(device)
             pil_images = tensors_to_pil_images(tensor_batch=labeled_inputs)
             labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
-            # labeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
+            # labeled_strong_augmented_images = [strong_transforms(image) for image in labeled_inputs]
             # plot_augmented_images(labeled_weak_augmented_images, labeled_strong_augmented_images)
             labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
             # labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
@@ -74,7 +80,7 @@ def train_vib(model, dataset):
             unlabeled_inputs = unlabeled_data[0].to(device)
             pil_images = tensors_to_pil_images(tensor_batch=unlabeled_inputs)
             unlabeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
-            unlabeled_strong_augmented_images = [strong_transforms(image) for image in pil_images]
+            unlabeled_strong_augmented_images = [strong_transforms(image) for image in unlabeled_inputs]
             # plot_augmented_images(unlabeled_weak_augmented_images, unlabeled_strong_augmented_images)
             unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
