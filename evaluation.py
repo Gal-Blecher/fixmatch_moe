@@ -64,13 +64,47 @@ def plot_scatter_with_labels(df):
     plt.show()
 
 
+import matplotlib.pyplot as plt
+
+
+def plot_reconstruction_images(loader, model):
+    # Get the next batch from the loader
+    batch = next(iter(loader))
+
+    # Pass the batch through the model to get reconstructed images
+    _,_a = model(batch[0])
+    batch_hat = model.x_hat
+
+    # Convert tensors to numpy arrays
+    batch = batch[0].cpu().detach().numpy()
+    batch_hat = batch_hat.cpu().detach().numpy()
+
+    # Plot the first 5 images
+    plt.figure(figsize=(10, 4))
+
+    for i in range(5):
+        plt.subplot(2, 5, i + 1)
+        plt.imshow(batch[i].transpose(1, 2, 0))  # Transpose to (height, width, channels)
+        plt.title("Input")
+        plt.axis("off")
+
+        plt.subplot(2, 5, i + 6)
+        plt.imshow(batch_hat[i].transpose(1, 2, 0))  # Transpose to (height, width, channels)
+        plt.title("Reconstructed")
+        plt.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/vib_18_randomaugment/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/vib_20/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
+    plot_reconstruction_images(dataset['unlabeled_loader'], model)
     low_dim_data = two_dims_from_z(dataset, model)
     plot_scatter_with_labels(low_dim_data)
     t=1
