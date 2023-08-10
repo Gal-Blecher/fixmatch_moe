@@ -102,11 +102,51 @@ def ResNet18(e):
     torch.manual_seed(e)
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
+
+import torch
+import torch.nn as nn
+import torchvision.models as models
+
+
+import torch
+import torch.nn as nn
+
+class VIB_Decoder(nn.Module):
+    def __init__(self, latent_dim):
+        super(VIB_Decoder, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.setup = setup
+
+        # Fully connected layer to map latent_dim to initial convolutional shape
+        self.fc = nn.Linear(latent_dim, 512 * 4 * 4)
+
+        # Transposed convolutional layers
+        self.deconv1 = nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
+        self.deconv2 = nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
+        self.deconv3 = nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
+        self.deconv4 = nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
+
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.view(-1, 512, 4, 4)  # Reshape the tensor
+        x = self.relu(self.deconv1(x))
+        x = self.relu(self.deconv2(x))
+        x = self.relu(self.deconv3(x))
+        x = self.deconv4(x)
+        return x
+
+
+
 class VIBNet(nn.Module):
     def __init__(self, seed, latent_dim=setup['latent_dim'], num_classes=10):
         super(VIBNet, self).__init__()
         torch.manual_seed(seed)
         self.encoder = ResNet18(seed)
+        self.decoder = VIB_Decoder(setup['latent_dim'])
 
         self.fc_combined = nn.Linear(512, latent_dim * 2)
         self.fc_classifier = nn.Linear(latent_dim, num_classes)
@@ -118,6 +158,7 @@ class VIBNet(nn.Module):
         return z
 
     def forward(self, x):
+        x_input = x
         x = self.encoder(x)
         combined = self.fc_combined(x)
         mean, logvar = torch.chunk(combined, 2, dim=1)
@@ -126,6 +167,8 @@ class VIBNet(nn.Module):
 
         self.kl_loss = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp(), dim=1)
         self.out = classification_output
+        self.x_hat = self.decoder(z)
+        self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
 
         return z, classification_output
 

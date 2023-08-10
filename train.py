@@ -25,16 +25,6 @@ def train_vib(model, dataset):
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
-    # strong_transforms = transforms.Compose([
-    #     transforms.RandomCrop(32, padding=4),
-    #     transforms.RandomResizedCrop(size=(32, 32)),
-    #     transforms.RandomHorizontalFlip(),
-    #     transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-    #     transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2)),
-    #     transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    # ])
     strong_transforms = transforms.Compose([
         transforms.ToPILImage(),
         transforms.RandAugment(num_ops=2, magnitude=setup['randaugment_magnitude']),
@@ -85,6 +75,7 @@ def train_vib(model, dataset):
             unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
+            reconstruction_loss = model.reconstruction_loss
             strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
             _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
             weak_unlabeled_classification_probs = F.softmax(weak_unlabeled_classification, dim=1)
@@ -97,7 +88,7 @@ def train_vib(model, dataset):
             else:
                 unsupervied_loss = 0
 
-            loss = supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss
+            loss = supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss + setup['reconstruction_coeff'] * reconstruction_loss
 
             optimizer.zero_grad()
 
