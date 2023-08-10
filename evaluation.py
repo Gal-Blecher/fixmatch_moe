@@ -104,7 +104,7 @@ if __name__ == '__main__':
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
-    plot_reconstruction_images(dataset['unlabeled_loader'], model)
+    plot_reconstruction_images(dataset['test_loader'], model)
     low_dim_data = two_dims_from_z(dataset, model)
     plot_scatter_with_labels(low_dim_data)
     t=1

@@ -136,7 +136,7 @@ class VIB_Decoder(nn.Module):
         x = self.relu(self.deconv1(x))
         x = self.relu(self.deconv2(x))
         x = self.relu(self.deconv3(x))
-        x = self.sigmoid(self.deconv4(x))
+        x = self.deconv4(x)
         return x
 
 
