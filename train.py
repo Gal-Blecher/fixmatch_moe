@@ -75,6 +75,7 @@ def train_vib(model, dataset):
             unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
+            _, _ = model(unlabeled_inputs)
             reconstruction_loss = model.reconstruction_loss
 
             strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
