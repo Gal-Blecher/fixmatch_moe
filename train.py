@@ -45,6 +45,7 @@ def train_vib(model, dataset):
                           momentum=0.9, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=setup['n_epochs'])
     bce_loss = nn.BCELoss()
+    ce = nn.CrossEntropyLoss()
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
         labeled_iter = iter(cycle(dataset['labeled_loader']))
@@ -77,7 +78,8 @@ def train_vib(model, dataset):
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
             _, _ = model(unlabeled_inputs)
-            reconstruction_loss = bce_loss(unlabeled_inputs, model.x_hat)
+            reconstruction_loss = ce(unlabeled_inputs, model.x_hat)
+            # reconstruction_loss = 0
 
             strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
             _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
@@ -105,7 +107,7 @@ def train_vib(model, dataset):
             if batch_idx % 50 == 0:
                 logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
                 logger.info(f'supervised loss: {round(supervised_loss.item(), 4)}')
-                logger.info(f'reconstruction loss: {round(reconstruction_loss.item(), 4)}')
+                # logger.info(f'reconstruction loss: {round(reconstruction_loss.item(), 4)}')
                 running_loss = 0
             batch_idx += 1
         acc_train = round((correct/(total+0.00001))*100, 2)
