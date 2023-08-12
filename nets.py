@@ -241,7 +241,6 @@ class VIBNet(nn.Module):
         self.out = classification_output
         self.x_hat = self.decoder(z)
         # self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
-        self.reconstruction_loss = nn.BCELoss(x_input, self.x_hat)
 
         return z, classification_output
 

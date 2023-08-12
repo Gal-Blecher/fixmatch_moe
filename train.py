@@ -44,6 +44,7 @@ def train_vib(model, dataset):
     optimizer = optim.SGD(model.parameters(), lr=setup['lr'],
                           momentum=0.9, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=setup['n_epochs'])
+    bce_loss = nn.BCELoss()
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
         labeled_iter = iter(cycle(dataset['labeled_loader']))
@@ -76,7 +77,7 @@ def train_vib(model, dataset):
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
             _, _ = model(unlabeled_inputs)
-            reconstruction_loss = model.reconstruction_loss
+            reconstruction_loss = bce_loss(unlabeled_inputs, model.x_hat)
 
             strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
             _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
