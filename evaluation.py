@@ -100,7 +100,7 @@ def plot_reconstruction_images(loader, model):
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/vib_24/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/vib_25_with_sigmoid/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()

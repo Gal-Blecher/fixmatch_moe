@@ -240,7 +240,8 @@ class VIBNet(nn.Module):
         self.kl_loss = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp(), dim=1)
         self.out = classification_output
         self.x_hat = self.decoder(z)
-        self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
+        # self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
+        self.reconstruction_loss = nn.BCELoss(x_input, self.x_hat)
 
         return z, classification_output
 
