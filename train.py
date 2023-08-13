@@ -116,7 +116,8 @@ def train_vib(model, dataset):
         acc_test = vib_test(dataset['test_loader'], model)
         model.test_acc.append(acc_test)
         logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
-        if acc_test == max(model.test_acc):
+        # if acc_test == max(model.test_acc):
+        if True:
             logger.info('--------------------------------------------saving model--------------------------------------------')
             torch.save(model.state_dict(), f'{path}/model.pkl')
 
