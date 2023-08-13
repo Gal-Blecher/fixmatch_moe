@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import setup
 import matplotlib.pyplot as plt
+import torchvision
 
 
 
@@ -206,7 +207,7 @@ class ResNet18Dec(nn.Module):
         x = self.layer3(x)
         x = self.layer2(x)
         x = self.layer1(x)
-        x = torch.sigmoid(self.conv1(x))
+        x = self.conv1(x)
         return x
 
 
@@ -240,7 +241,7 @@ class VIBNet(nn.Module):
         self.kl_loss = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp(), dim=1)
         self.out = classification_output
         self.x_hat = self.decoder(z)
-        # self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
+        self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
 
         return z, classification_output
 
