@@ -218,8 +218,8 @@ class VIBNet(nn.Module):
         super(VIBNet, self).__init__()
         torch.manual_seed(seed)
         self.encoder = ResNet18(seed)
-        self.decoder = VIB_Decoder(setup['latent_dim'])
-        # self.decoder = ResNet18Dec(setup['latent_dim'])
+        # self.decoder = VIB_Decoder(setup['latent_dim'])
+        self.decoder = ResNet18Dec(setup['latent_dim'])
 
         self.fc_combined = nn.Linear(512, latent_dim * 2)
         self.fc_classifier = nn.Linear(latent_dim, num_classes)
