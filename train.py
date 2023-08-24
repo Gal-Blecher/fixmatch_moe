@@ -79,7 +79,9 @@ def train_vib(model, dataset):
             weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
             reconstruction_loss = model.reconstruction_loss
 
-            strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
+            unlabeled_strong_augmented_tensors_reconstruted = model.x_hat
+
+            strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors_reconstruted)
             _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
             weak_unlabeled_classification_probs = F.softmax(weak_unlabeled_classification, dim=1)
 
