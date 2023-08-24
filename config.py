@@ -3,7 +3,7 @@
 
 setup = {'n_epochs': 200,
          'batch_size': 128,
-         'lr': 0.005,
+         'lr': 0.001,
          'router_lr': 0.00000000001,
          'kl_coeff': 0,
          'experts_coeff': 1.0,
