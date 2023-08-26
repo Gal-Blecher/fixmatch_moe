@@ -198,7 +198,7 @@ def moe_train_vib(model, dataset):
                 weak_unlabeled_z, weak_unlabeled_classification = expert(unlabeled_weak_augmented_tensors)
                 strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
                 _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
-                weak_unlabeled_classification_probs = F.softmax(weak_unlabeled_classification, dim=1)
+                weak_unlabeled_classification_probs = weak_unlabeled_classification
 
                 confidence_mask = weak_unlabeled_classification_probs.max(1)[0] > setup['confidence_th']
                 weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]
