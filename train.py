@@ -123,8 +123,21 @@ def train_vib(model, dataset):
             logger.info('--------------------------------------------saving model--------------------------------------------')
             torch.save(model.state_dict(), f'{path}/model.pkl')
 
-
 def moe_train_vib(model, dataset):
+    weak_transforms = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+
+    strong_transforms = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandAugment(num_ops=2, magnitude=setup['randaugment_magnitude']),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ])
+
     logger = get_logger(setup['experiment_name'])
     for key, value in setup.items():
         to_log = str(key) + ': ' + str(value)
@@ -147,23 +160,57 @@ def moe_train_vib(model, dataset):
     scheduler_router = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_router, T_max=setup['n_epochs'])
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
+        labeled_iter = iter(cycle(dataset['labeled_loader']))
+        unlabeled_iter = iter(dataset['unlabeled_loader'])
         model.train()
+        batch_idx = 0
         running_loss = 0
         correct = 0
         total = 0
-        if epoch % 2 == 0:
-            loader = dataset['labeled_trainloader']
-        else:
-            loader = dataset['unlabeled_trainloader']
-        for batch_idx, (inputs, targets) in enumerate(loader):
-            inputs, targets = inputs.to(device), targets.to(device)
+        for labeled_data, unlabeled_data in zip(labeled_iter, unlabeled_iter):
+            batch_idx += 1
             optimizer_experts.zero_grad()
             optimizer_router.zero_grad()
-            outputs, att_weights = model(inputs)
-            net_loss = criterion(outputs, targets)
-            experts_loss_ = experts_loss(targets, att_weights.squeeze(2), model)
-            kl_loss = kl_divergence(att_weights.sum(0))
-            loss = net_loss + setup['experts_coeff'] * experts_loss_ + setup['kl_coeff'] * kl_loss
+
+            # labeled data
+            labeled_inputs, targets = labeled_data[0].to(device), labeled_data[1].to(device)
+            pil_images = tensors_to_pil_images(tensor_batch=labeled_inputs)
+            labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
+            labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
+            outputs, att_weights = model(labeled_weak_augmented_tensors)
+            net_loss_supervised = criterion(outputs, targets)
+            experts_loss_supervised = experts_loss(targets, att_weights.squeeze(2), model)
+            kl_loss_balance = kl_divergence(att_weights.sum(0))
+            supervised_loss = setup['net_loss_supervised_coeff'] * net_loss_supervised + setup['experts_loss_supervised_coeff'] * experts_loss_supervised + setup['kl_coeff'] * kl_loss_balance
+
+            # unlabeled data
+            unlabeled_inputs = unlabeled_data[0].to(device)
+            pil_images = tensors_to_pil_images(tensor_batch=unlabeled_inputs)
+            unlabeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
+            unlabeled_strong_augmented_images = [strong_transforms(image) for image in unlabeled_inputs]
+            unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
+            unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
+
+            unsupervied_loss_experts = 0
+            for exp in range(1, setup['n_experts'] + 1):
+                expert_name = f"expert{exp}"
+                expert = getattr(model, expert_name)
+                weak_unlabeled_z, weak_unlabeled_classification = expert(unlabeled_weak_augmented_tensors)
+                strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
+                _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
+                weak_unlabeled_classification_probs = F.softmax(weak_unlabeled_classification, dim=1)
+
+                confidence_mask = weak_unlabeled_classification_probs.max(1)[0] > setup['confidence_th']
+                weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]
+                strong_unlabeled_classification = strong_unlabeled_classification[confidence_mask]
+                if weak_unlabeled_classification_pseudo.shape[0] > 0:
+                    unsupervied_loss = criterion(strong_unlabeled_classification, weak_unlabeled_classification_pseudo)
+                else:
+                    unsupervied_loss = 0
+                unsupervied_loss_experts += unsupervied_loss
+
+
+            loss = setup['supervised_loss_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss
 
             loss.backward()
             optimizer_experts.step()
@@ -175,35 +222,26 @@ def moe_train_vib(model, dataset):
             correct += predicted.eq(targets).sum().item()
             if batch_idx % 50 == 0:
                 logger.info(f'batch_idx: {batch_idx}, experts ratio: {att_weights.sum(0).data.T}')
+                logger.info(f'batch_idx: {batch_idx}, supervised_loss: {supervised_loss.item()}')
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
         scheduler_experts.step()
         scheduler_router.step()
-        if epoch % 1 == 0 or epoch > 150:
-            acc_test = moe_test(dataset['test_loader'], model)
-            model.test_acc.append(acc_test)
-            logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
-            with open(f"{path}/current_epoch.txt", "w") as file:
-                file.write(f'{epoch}')
-            if acc_test == max(model.test_acc):
-                logger.info('--------------------------------------------saving model--------------------------------------------')
-                torch.save(model, f'{path}/model.pkl')
-                with open(f"{path}/config.txt", "w") as file:
-                    file.write(json.dumps(setup))
-                    file.write(json.dumps(train_config))
-                with open(f"{path}/accuracy.txt", "w") as file:
-                    file.write(f'{epoch}: {acc_test}')
-            if early_stop(model.test_acc):
-                with open(f'{path}/acc_test.pkl', 'wb') as f:
-                    pickle.dump(model.test_acc, f)
-                return
+
+        acc_test, predicted_list, target_list = moe_test(dataset['test_loader'], model)
+        model.test_acc.append(acc_test)
+        logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
+        # if acc_test == max(model.test_acc):
+        if acc_test == max(model.test_acc):
+            logger.info('--------------------------------------------saving model--------------------------------------------')
+            torch.save(model.state_dict(), f'{path}/model.pkl')
 
     with open(f'{path}/acc_test.pkl', 'wb') as f:
         pickle.dump(model.test_acc, f)
 
 def moe_test(test_loader, model):
-    device = train_config['device']
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     correct = 0
     total = 0
@@ -237,7 +275,7 @@ def vib_test(test_loader, model):
         return acc, predicted_list, target_list
 
 def experts_loss(labels, att_weights, model):
-    device = train_config['device']
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     labels = labels.to(device)
     criterion = nn.CrossEntropyLoss(reduction='none')
     if model.n_experts == 2:
@@ -251,10 +289,10 @@ def experts_loss(labels, att_weights, model):
     if model.n_experts == 4:
         experts_loss_ = torch.stack(
             (
-            criterion(model.expert1.out, labels),
-            criterion(model.expert2.out, labels),
-            criterion(model.expert3.out, labels),
-            criterion(model.expert4.out, labels)
+            criterion(model.expert1.out, labels) + setup['kl_vib_coeff'] * model.expert1.kl_loss,
+            criterion(model.expert2.out, labels) + setup['kl_vib_coeff'] * model.expert2.kl_loss,
+            criterion(model.expert3.out, labels) + setup['kl_vib_coeff'] * model.expert3.kl_loss,
+            criterion(model.expert4.out, labels) + setup['kl_vib_coeff'] * model.expert4.kl_loss
             )
             , dim=1)
 

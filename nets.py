@@ -242,8 +242,11 @@ class VIBNet(nn.Module):
         self.out = classification_output
         self.x_hat = self.decoder(z)
         self.reconstruction_loss = ((x_input - self.x_hat) ** 2).mean()
+        self.z = z
+        self.classification_output = classification_output
+        logits = F.softmax(classification_output, dim=1)
 
-        return z, classification_output
+        return z, logits
 
 
 

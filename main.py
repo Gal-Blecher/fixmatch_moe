@@ -10,7 +10,6 @@ import nets
 torch.manual_seed(42)
 
 if __name__ == '__main__':
-    # create new experiment folder
     path = './models/' + setup['experiment_name']
     if not os.path.exists(path):
         os.makedirs(path)
