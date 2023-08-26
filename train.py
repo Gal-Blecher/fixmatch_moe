@@ -222,7 +222,8 @@ def moe_train_vib(model, dataset):
             correct += predicted.eq(targets).sum().item()
             if batch_idx % 50 == 0:
                 logger.info(f'batch_idx: {batch_idx}, experts ratio: {att_weights.sum(0).data.T}')
-                logger.info(f'batch_idx: {batch_idx}, supervised_loss: {supervised_loss.item()}')
+                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
+                logger.info(f'batch_idx: {batch_idx}, supervised_loss: {round(supervised_loss.item(), 4)}')
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
@@ -243,6 +244,8 @@ def moe_train_vib(model, dataset):
 def moe_test(test_loader, model):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
+    predicted_list = []
+    target_list = []
     correct = 0
     total = 0
     with torch.no_grad():
@@ -252,8 +255,10 @@ def moe_test(test_loader, model):
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
+            predicted_list += predicted.tolist()
+            target_list += targets.tolist()
         acc = round((correct / total)*100, 2)
-        return acc
+        return acc, predicted_list, target_list
 
 def vib_test(test_loader, model):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
