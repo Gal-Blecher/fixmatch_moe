@@ -115,7 +115,7 @@ def train_vib(model, dataset):
 
         scheduler.step()
 
-        acc_test = vib_test(dataset['test_loader'], model)
+        acc_test, predicted_list, target_list = vib_test(dataset['test_loader'], model)
         model.test_acc.append(acc_test)
         logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
         # if acc_test == max(model.test_acc):
@@ -222,6 +222,8 @@ def vib_test(test_loader, model):
     model.eval()
     correct = 0
     total = 0
+    predicted_list = []
+    target_list = []
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(test_loader):
             inputs, targets = inputs.to(device), targets.to(device)
@@ -229,8 +231,10 @@ def vib_test(test_loader, model):
             _, predicted = classification_output.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
+            predicted_list += predicted.tolist()
+            target_list += targets.tolist()
         acc = round((correct / total)*100, 2)
-        return acc
+        return acc, predicted_list, target_list
 
 def experts_loss(labels, att_weights, model):
     device = train_config['device']

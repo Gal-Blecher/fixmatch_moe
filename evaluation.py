@@ -8,7 +8,8 @@ import datasets
 import build
 from config import setup
 import nets
-
+from train import vib_test
+from sklearn.metrics import classification_report
 
 def load_model(setup_dict):
     # Create an instance of the model
@@ -104,6 +105,8 @@ if __name__ == '__main__':
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
+    acc, predicted_list, target_list = vib_test(dataset['test_loader'], model)
+    print(classification_report(target_list, predicted_list))
     plot_reconstruction_images(dataset['test_loader'], model)
     low_dim_data = two_dims_from_z(dataset, model)
     plot_scatter_with_labels(low_dim_data)
