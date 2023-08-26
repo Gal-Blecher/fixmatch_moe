@@ -230,6 +230,7 @@ def moe_train_vib(model, dataset):
                     logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: {round(unsupervied_loss.item(), 4)}')
                 except:
                     logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: 0.0')
+                running_loss = 0
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
