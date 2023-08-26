@@ -12,7 +12,7 @@ setup = {'n_epochs': 200,
          'latent_dim': 32,
          'dataset_name': 'cifar10',
          'n_experts': 1,
-         'experiment_name': 'vib_40_with_reconstruction_1_recon_aug',
+         'experiment_name': 'vib_41_with_reconstruction_00001',
          'model_eval_path': None,
          'ssl_labels': 1000,
          'label_all': False,
@@ -21,6 +21,6 @@ setup = {'n_epochs': 200,
          'confidence_th': 0.95,
          'unsupervised_loss_coeff': 1.0,
          'randaugment_magnitude': 20,
-         'reconstruction_coeff': 1.0,
-         'supervised_coeff': 0.1
+         'reconstruction_coeff': 0.0001,
+         'supervised_coeff': 1.0
          }
