@@ -224,6 +224,12 @@ def moe_train_vib(model, dataset):
                 logger.info(f'batch_idx: {batch_idx}, experts ratio: {att_weights.sum(0).data.T}')
                 logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
                 logger.info(f'batch_idx: {batch_idx}, supervised_loss: {round(supervised_loss.item(), 4)}')
+                logger.info(f'batch_idx: {batch_idx}, experts_loss_supervised: {round(experts_loss_supervised.item(), 4)}')
+                logger.info(f'batch_idx: {batch_idx}, kl_loss_balance: {round(kl_loss_balance.item(), 4)}')
+                try:
+                    logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: {round(unsupervied_loss.item(), 4)}')
+                except:
+                    logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: 0.0')
         acc_train = round((correct/total)*100, 2)
         logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
 
