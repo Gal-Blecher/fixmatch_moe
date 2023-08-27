@@ -195,7 +195,7 @@ def moe_train_vib(model, dataset):
             for exp in range(1, setup['n_experts'] + 1):
                 expert_name = f"expert{exp}"
                 expert = getattr(model, expert_name)
-                weak_unlabeled_z, weak_unlabeled_classification = expert(unlabeled_weak_augmented_tensors) # the moe experts returns logits
+                weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors) # the moe experts returns logits
                 strong_unlabeled_z, strong_unlabeled_classification = expert(unlabeled_strong_augmented_tensors)
                 _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
                 # weak_unlabeled_classification_probs = F.softmax(expert.classification_output, dim=1)
