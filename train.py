@@ -152,6 +152,7 @@ def moe_train_vib(model, dataset):
     router_params = model.router.parameters()
     experts_params = get_experts_params_list(model)
     criterion = nn.CrossEntropyLoss()
+    criterion_none_reduction = nn.CrossEntropyLoss(reduction='none')
     optimizer_experts = optim.SGD(itertools.chain(*experts_params), lr=setup['lr'],
                           momentum=0.9, weight_decay=5e-4)
     scheduler_experts = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_experts, T_max=setup['n_epochs'])
@@ -210,7 +211,7 @@ def moe_train_vib(model, dataset):
                 unsupervied_loss_experts += unsupervied_loss
 
 
-            loss = setup['supervised_loss_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss
+            loss = setup['supervised_loss_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss_experts
 
             loss.backward()
             optimizer_experts.step()
@@ -228,7 +229,7 @@ def moe_train_vib(model, dataset):
                 logger.info(f'batch_idx: {batch_idx}, kl_loss_balance: {round(kl_loss_balance.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, mean confidence: {round(weak_unlabeled_logits.max(1)[0].mean().item(), 4)}')
                 try:
-                    logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: {round(unsupervied_loss.item(), 4)}')
+                    logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: {round(unsupervied_loss_experts.item(), 4)}')
                 except:
                     logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: 0.0')
 
