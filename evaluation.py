@@ -8,12 +8,12 @@ import datasets
 import build
 from config import setup
 import nets
-from train import vib_test
+from train import vib_test, moe_test
 from sklearn.metrics import classification_report
 
 def load_model(setup_dict):
     # Create an instance of the model
-    model = nets.VIBNet(42)
+    model = build.build_model()
     state_dict = torch.load(setup_dict['load_path'], map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
     model.eval()
@@ -97,17 +97,35 @@ def plot_reconstruction_images(loader, model):
     plt.tight_layout()
     plt.show()
 
+def moe_expert_eval(test_loader, expert):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    expert.eval()
+    predicted_list = []
+    target_list = []
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(test_loader):
+            inputs, targets = inputs.to(device), targets.to(device)
+            z, logits = expert(inputs)
+            _, predicted = logits.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+            predicted_list += predicted.tolist()
+            target_list += targets.tolist()
+        acc = round((correct / total)*100, 2)
+        return acc, predicted_list, target_list
+
 
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 256,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/vib_37_with_reconstruction_0001/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/moe_vib_ssl_14/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
-    acc, predicted_list, target_list = vib_test(dataset['test_loader'], model)
+    acc, predicted_list, target_list = moe_expert_eval(dataset['test_loader'], model.expert4)
     print(classification_report(target_list, predicted_list))
-    plot_reconstruction_images(dataset['test_loader'], model)
-    low_dim_data = two_dims_from_z(dataset, model)
+    low_dim_data = two_dims_from_z(dataset, model.expert4)
     plot_scatter_with_labels(low_dim_data)
     t=1
