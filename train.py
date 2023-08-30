@@ -17,112 +17,6 @@ def tensors_to_pil_images(tensor_batch):
     pil_images = [transforms.functional.to_pil_image(tensor) for tensor in tensor_batch]
     return pil_images
 
-def train_vib(model, dataset):
-    weak_transforms = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    strong_transforms = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.RandAugment(num_ops=2, magnitude=setup['randaugment_magnitude']),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-
-    logger = get_logger(setup['experiment_name'])
-    for key, value in setup.items():
-        to_log = str(key) + ': ' + str(value)
-        logger.info(to_log)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    path = './models/' + setup['experiment_name']
-    model = model.to(device)
-    logger.info(f'training with device: {device}')
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=setup['lr'],
-                          momentum=0.9, weight_decay=5e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=setup['n_epochs'])
-    bce_loss = nn.BCELoss()
-    ce = nn.CrossEntropyLoss()
-    model.test_acc = []
-    for epoch in range(setup['n_epochs']):
-        labeled_iter = iter(cycle(dataset['labeled_loader']))
-        unlabeled_iter = iter(dataset['unlabeled_loader'])
-        model.train()
-        running_loss = 0
-        correct = 0
-        total = 0
-        batch_idx = 0
-        for labeled_data, unlabeled_data in zip(labeled_iter, unlabeled_iter):
-            # labeled batch
-            labeled_inputs, targets = labeled_data[0].to(device), labeled_data[1].to(device)
-            pil_images = tensors_to_pil_images(tensor_batch=labeled_inputs)
-            labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
-            # labeled_strong_augmented_images = [strong_transforms(image) for image in labeled_inputs]
-            # plot_augmented_images(labeled_weak_augmented_images, labeled_strong_augmented_images)
-            labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
-            # labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
-            weak_labeled_z, weak_labeled_classification = model(labeled_weak_augmented_tensors)
-            # strong_labeled_z, strong_labeled_classification = model(labeled_strong_augmented_tensors)
-            supervised_loss = criterion(weak_labeled_classification, targets) + setup['kl_vib_coeff'] * model.kl_loss.mean()
-
-            # unlabeled batch
-            unlabeled_inputs = unlabeled_data[0].to(device)
-            pil_images = tensors_to_pil_images(tensor_batch=unlabeled_inputs)
-            unlabeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
-            unlabeled_strong_augmented_images = [strong_transforms(image) for image in unlabeled_inputs]
-            # plot_augmented_images(unlabeled_weak_augmented_images, unlabeled_strong_augmented_images)
-            unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
-            unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
-            weak_unlabeled_z, weak_unlabeled_classification = model(unlabeled_weak_augmented_tensors)
-            reconstruction_loss = model.reconstruction_loss
-
-            unlabeled_strong_augmented_tensors_reconstruted = model.x_hat
-
-            strong_unlabeled_z, strong_unlabeled_classification = model(unlabeled_strong_augmented_tensors)
-            _, weak_unlabeled_classification_pseudo = weak_unlabeled_classification.max(1)
-            weak_unlabeled_classification_probs = F.softmax(weak_unlabeled_classification, dim=1)
-
-            confidence_mask = weak_unlabeled_classification_probs.max(1)[0] > setup['confidence_th']
-            weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]
-            strong_unlabeled_classification = strong_unlabeled_classification[confidence_mask]
-            if weak_unlabeled_classification_pseudo.shape[0] > 0:
-                unsupervied_loss = criterion(strong_unlabeled_classification, weak_unlabeled_classification_pseudo)
-            else:
-                unsupervied_loss = 0
-
-            loss = setup['supervised_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss + setup['reconstruction_coeff'] * reconstruction_loss
-
-            optimizer.zero_grad()
-
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-            _, predicted = weak_labeled_classification.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-            if batch_idx % 50 == 0:
-                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
-                logger.info(f'supervised loss: {round(supervised_loss.item(), 4)}')
-                logger.info(f'reconstruction loss: {round(reconstruction_loss.item(), 7)}')
-                running_loss = 0
-            batch_idx += 1
-        acc_train = round((correct/(total+0.00001))*100, 2)
-        logger.info(f'epoch: {epoch}, train accuracy: {acc_train}')
-
-        scheduler.step()
-
-        acc_test, predicted_list, target_list = vib_test(dataset['test_loader'], model)
-        model.test_acc.append(acc_test)
-        logger.info(f'epoch: {epoch}, test accuracy: {round(acc_test, 2)}')
-        # if acc_test == max(model.test_acc):
-        if acc_test == max(model.test_acc):
-            logger.info('--------------------------------------------saving model--------------------------------------------')
-            torch.save(model.state_dict(), f'{path}/model.pkl')
-
 def moe_train_vib(model, dataset):
     weak_transforms = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -178,6 +72,10 @@ def moe_train_vib(model, dataset):
             pil_images = tensors_to_pil_images(tensor_batch=labeled_inputs)
             labeled_weak_augmented_images = [weak_transforms(image) for image in pil_images]
             labeled_weak_augmented_tensors = torch.stack(labeled_weak_augmented_images).to(device)
+
+            labeled_strong_augmented_images = [strong_transforms(image) for image in labeled_inputs]
+            labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
+
             outputs, att_weights = model(labeled_weak_augmented_tensors)
             net_loss_supervised = criterion(outputs, targets)
             experts_loss_supervised = experts_loss(targets, att_weights.squeeze(2), model)
@@ -209,6 +107,21 @@ def moe_train_vib(model, dataset):
                 else:
                     unsupervied_loss = 0
                 unsupervied_loss_experts += unsupervied_loss
+
+                # fixmatch for labeled data
+                strong_unlabeled_z, strong_labeled_classification = expert(labeled_strong_augmented_tensors)
+                _, weak_labeled_classification_pseudo = outputs.max(1)
+
+                confidence_mask = outputs.max(1)[0] > setup['confidence_th']
+                weak_labeled_classification_pseudo = weak_labeled_classification_pseudo[confidence_mask]
+                strong_labeled_classification = strong_labeled_classification[confidence_mask]
+                if weak_labeled_classification_pseudo.shape[0] > 0:
+                    unsupervied_loss_labeled = criterion(strong_labeled_classification, weak_labeled_classification_pseudo)
+                else:
+                    unsupervied_loss_labeled = 0
+                unsupervied_loss_experts += unsupervied_loss_labeled
+
+
 
 
             loss = setup['supervised_loss_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss_experts
@@ -264,25 +177,6 @@ def moe_test(test_loader, model):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs, att_weights = model(inputs)
             _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-            predicted_list += predicted.tolist()
-            target_list += targets.tolist()
-        acc = round((correct / total)*100, 2)
-        return acc, predicted_list, target_list
-
-def vib_test(test_loader, model):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.eval()
-    correct = 0
-    total = 0
-    predicted_list = []
-    target_list = []
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(test_loader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            z, classification_output = model(inputs)
-            _, predicted = classification_output.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             predicted_list += predicted.tolist()
