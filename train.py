@@ -55,6 +55,11 @@ def moe_train_vib(model, dataset):
     scheduler_router = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_router, T_max=setup['n_epochs'])
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
+        if ((epoch % 10 == 0) & (epoch != 0)):
+            setup['kl_coeff'] /= 2
+            print_kl_coeff = setup['kl_coeff']
+            logger.info(f'kl coeff reduced to {print_kl_coeff}')
+
         labeled_iter = iter(cycle(dataset['labeled_loader']))
         unlabeled_iter = iter(dataset['unlabeled_loader'])
         model.train()
@@ -134,9 +139,9 @@ def moe_train_vib(model, dataset):
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
-            if batch_idx % 50 == 0:
+            if batch_idx % 100 == 0:
                 logger.info(f'batch_idx: {batch_idx}, experts ratio: {att_weights.sum(0).data.T}')
-                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
+                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/100, 4)}')
                 logger.info(f'batch_idx: {batch_idx}, supervised_loss: {round(supervised_loss.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, experts_loss_supervised: {round(experts_loss_supervised.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, kl_loss_balance: {round(kl_loss_balance.item(), 4)}')
