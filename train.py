@@ -55,11 +55,6 @@ def moe_train_vib(model, dataset):
     scheduler_router = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_router, T_max=setup['n_epochs'])
     model.test_acc = []
     for epoch in range(setup['n_epochs']):
-        if ((epoch % 10 == 0) & (epoch != 0)):
-            setup['kl_coeff'] /= 2
-            print_kl_coeff = setup['kl_coeff']
-            logger.info(f'kl coeff reduced to {print_kl_coeff}')
-
         labeled_iter = iter(cycle(dataset['labeled_loader']))
         unlabeled_iter = iter(dataset['unlabeled_loader'])
         model.train()
@@ -107,11 +102,14 @@ def moe_train_vib(model, dataset):
                 confidence_mask = weak_unlabeled_logits.max(1)[0] > setup['confidence_th']
                 weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]
                 strong_unlabeled_classification = strong_unlabeled_classification[confidence_mask]
+                attention_weights_masked = att_weights[confidence_mask]
+                attention_weights_masked_relevant_exp = attention_weights_masked[:,exp-1,:].flatten()
                 if weak_unlabeled_classification_pseudo.shape[0] > 0:
-                    unsupervied_loss = criterion(strong_unlabeled_classification, weak_unlabeled_classification_pseudo)
+                    unsupervied_loss = criterion_none_reduction(strong_unlabeled_classification, weak_unlabeled_classification_pseudo)
+                    unsupervied_loss_weighted = torch.dot(unsupervied_loss, attention_weights_masked_relevant_exp) / attention_weights_masked_relevant_exp.sum()
                 else:
-                    unsupervied_loss = 0
-                unsupervied_loss_experts += unsupervied_loss
+                    unsupervied_loss_weighted = 0
+                unsupervied_loss_experts += unsupervied_loss_weighted
 
                 # fixmatch for labeled data
                 strong_unlabeled_z, strong_labeled_classification = expert(labeled_strong_augmented_tensors)
