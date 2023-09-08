@@ -8,6 +8,7 @@ import datasets
 import build
 from config import setup
 import nets
+from sklearn.metrics import classification_report
 
 
 def load_model(setup_dict):
@@ -63,14 +64,35 @@ def plot_scatter_with_labels(df):
     plt.grid(True)
     plt.show()
 
+def moe_expert_eval(test_loader, expert):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    expert.eval()
+    predicted_list = []
+    target_list = []
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(test_loader):
+            inputs, targets = inputs.to(device), targets.to(device)
+            z, logits = expert(inputs)
+            _, predicted = logits.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+            predicted_list += predicted.tolist()
+            target_list += targets.tolist()
+        acc = round((correct / total)*100, 2)
+        return acc, predicted_list, target_list
+
 
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 32,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_6/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/vib_only/vib_5/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
+    acc, predicted_list, target_list = moe_expert_eval(dataset['test_loader'], model)
+    print(classification_report(target_list, predicted_list))
     low_dim_data = two_dims_from_z(dataset, model)
     plot_scatter_with_labels(low_dim_data)
     t=1
