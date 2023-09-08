@@ -89,12 +89,11 @@ def moe_train_vib(model, dataset):
             unlabeled_strong_augmented_images = [strong_transforms(image) for image in unlabeled_inputs]
             unlabeled_weak_augmented_tensors = torch.stack(unlabeled_weak_augmented_images).to(device)
             unlabeled_strong_augmented_tensors = torch.stack(unlabeled_strong_augmented_images).to(device)
-
             unsupervied_loss_experts = 0
             for exp in range(1, setup['n_experts'] + 1): # the moe experts returns logits
                 expert_name = f"expert{exp}"
                 expert = getattr(model, expert_name)
-                weak_unlabeled_logits, att_weights = model(unlabeled_weak_augmented_tensors)
+                weak_unlabeled_logits, att_weights_ = model(unlabeled_weak_augmented_tensors)
                 strong_unlabeled_z, strong_unlabeled_classification = expert(unlabeled_strong_augmented_tensors)
                 _, weak_unlabeled_classification_pseudo = weak_unlabeled_logits.max(1)
                 # weak_unlabeled_classification_probs = F.softmax(expert.classification_output, dim=1)
@@ -102,7 +101,7 @@ def moe_train_vib(model, dataset):
                 confidence_mask = weak_unlabeled_logits.max(1)[0] > setup['confidence_th']
                 weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]
                 strong_unlabeled_classification = strong_unlabeled_classification[confidence_mask]
-                attention_weights_masked = att_weights[confidence_mask]
+                attention_weights_masked = att_weights_[confidence_mask]
                 attention_weights_masked_relevant_exp = attention_weights_masked[:,exp-1,:].flatten()
                 if weak_unlabeled_classification_pseudo.shape[0] > 0:
                     unsupervied_loss = criterion_none_reduction(strong_unlabeled_classification, weak_unlabeled_classification_pseudo)
@@ -118,11 +117,15 @@ def moe_train_vib(model, dataset):
                 confidence_mask = outputs.max(1)[0] > setup['confidence_th']
                 weak_labeled_classification_pseudo = weak_labeled_classification_pseudo[confidence_mask]
                 strong_labeled_classification = strong_labeled_classification[confidence_mask]
+                # att_weights was calculated in the labeled forward. att_weights_ calculated on the unlabeled images
+                attention_weights_masked = att_weights[confidence_mask]
+                attention_weights_masked_relevant_exp = attention_weights_masked[:,exp-1,:].flatten()
                 if weak_labeled_classification_pseudo.shape[0] > 0:
-                    unsupervied_loss_labeled = criterion(strong_labeled_classification, weak_labeled_classification_pseudo)
+                    unsupervied_loss_labeled = criterion_none_reduction(strong_labeled_classification, weak_labeled_classification_pseudo)
+                    unsupervied_loss_labeled_weighted = torch.dot(unsupervied_loss_labeled, attention_weights_masked_relevant_exp) / attention_weights_masked_relevant_exp.sum()
                 else:
-                    unsupervied_loss_labeled = 0
-                unsupervied_loss_experts += unsupervied_loss_labeled
+                    unsupervied_loss_labeled_weighted = 0
+                unsupervied_loss_experts += unsupervied_loss_labeled_weighted
 
 
 
