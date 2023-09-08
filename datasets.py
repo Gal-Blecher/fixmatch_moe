@@ -6,8 +6,6 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-
-
 def get_dataset():
     dataset_name = setup['dataset_name']
     if dataset_name == 'cifar10':
@@ -21,14 +19,19 @@ def get_dataset():
         transform_test = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
+        ])
 
         full_trainset = torchvision.datasets.CIFAR10(
             root='./data', train=True, download=True, transform=tensor_transform)
 
-        # Splitting the dataset into labeled and unlabeled parts
-        labeled_subset, unlabeled_subset = torch.utils.data.random_split(full_trainset,
-                                                                         [n_labels, len(full_trainset) - n_labels])
+        # Filter the dataset to include only samples with labels 2, 3, and 5
+        filtered_indices = []
+        for idx, (image, label) in enumerate(full_trainset):
+            if label in [2, 3, 5]:
+                filtered_indices.append(idx)
+
+        labeled_subset = torch.utils.data.Subset(full_trainset, filtered_indices)
+        unlabeled_subset = torch.utils.data.Subset(full_trainset, filtered_indices)
 
         labeled_loader = torch.utils.data.DataLoader(
             labeled_subset, batch_size=batch_size, shuffle=True, num_workers=2)
@@ -48,6 +51,7 @@ def get_dataset():
         }
 
         return dataset
+
 
 
 def print_data_info(train_loader, test_loader, dataset_name):
