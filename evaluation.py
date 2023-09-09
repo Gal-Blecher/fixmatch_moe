@@ -148,7 +148,7 @@ def plot_exp_dist(dominant_dict):
 if __name__ == '__main__':
     setup_dict = {
         'latent_dim': 256,
-        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/moe_fm/moe_vib_ssl_30/model.pkl'
+        'load_path': '/Users/galblecher/Desktop/Thesis_out/vib_cifar/fixmatch/moe_fm/moe_vib_ssl_35_weighted_unsupervised_expert_loss/model.pkl'
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
