@@ -127,9 +127,6 @@ def moe_train_vib(model, dataset):
                     unsupervied_loss_labeled = 0
                 unsupervied_loss_experts += unsupervied_loss_labeled
 
-
-
-
             loss = setup['supervised_loss_coeff'] * supervised_loss + setup['unsupervised_loss_coeff'] * unsupervied_loss_experts
 
             loss.backward()
