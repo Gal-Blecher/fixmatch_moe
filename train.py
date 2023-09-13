@@ -121,11 +121,11 @@ def moe_train_vib(model, dataset):
                 attention_weights_masked = att_weights[confidence_mask]
                 attention_weights_masked_relevant_exp = attention_weights_masked[:,exp-1,:].flatten()
                 if weak_labeled_classification_pseudo.shape[0] > 0:
-                    unsupervied_loss_labeled = criterion_none_reduction(strong_labeled_classification, weak_labeled_classification_pseudo)
-                    unsupervied_loss_labeled_weighted = torch.dot(unsupervied_loss_labeled, attention_weights_masked_relevant_exp) / attention_weights_masked_relevant_exp.sum()
+                    unsupervied_loss_labeled = criterion(strong_labeled_classification, weak_labeled_classification_pseudo)
+                    # unsupervied_loss_labeled_weighted = torch.dot(unsupervied_loss_labeled, attention_weights_masked_relevant_exp) / attention_weights_masked_relevant_exp.sum()
                 else:
-                    unsupervied_loss_labeled_weighted = 0
-                unsupervied_loss_experts += unsupervied_loss_labeled_weighted
+                    unsupervied_loss_labeled = 0
+                unsupervied_loss_experts += unsupervied_loss_labeled
 
 
 
