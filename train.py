@@ -143,7 +143,7 @@ def moe_train_vib(model, dataset):
                 logger.info(f'batch_idx: {batch_idx}, supervised_loss: {round(supervised_loss.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, experts_loss_supervised: {round(experts_loss_supervised.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, kl_loss_balance: {round(kl_loss_balance.item(), 4)}')
-                logger.info(f'batch_idx: {batch_idx}, mean confidence: {round(weak_unlabeled_logits.max(1)[0].mean().item(), 4)}')
+                logger.info(f'batch_idx: {batch_idx}, mean confidence: {round(weak_unlabeled_classification.max(1)[0].mean().item(), 4)}')
                 try:
                     logger.info(f'batch_idx: {batch_idx}, unsupervied_loss: {round(unsupervied_loss_experts.item(), 4)}')
                 except:
