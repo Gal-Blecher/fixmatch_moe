@@ -3,9 +3,9 @@
 
 setup = {'n_epochs': 200,
          'batch_size': 128,
-         'lr': 0.05,
+         'lr': 0.01,
          'router_lr': 0.001,
-         'kl_coeff': 0.5,
+         'kl_coeff': 0.05,
          'experts_coeff': 1.0,
          'expert_type': 'VIBNet',
          'kl_vib_coeff': 1e-7,
