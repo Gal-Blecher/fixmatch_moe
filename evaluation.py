@@ -152,8 +152,8 @@ if __name__ == '__main__':
     }
     model = load_model(setup_dict)
     dataset = datasets.get_dataset()
-    # domininat_dict = experts_dominanace(model, dataset['test_loader'])
-    # plot_exp_dist(domininat_dict)
+    domininat_dict = experts_dominanace(model, dataset['test_loader'])
+    plot_exp_dist(domininat_dict)
     # acc, predicted_list, target_list = moe_expert_eval(dataset['test_loader'], model.expert3)
     # print(classification_report(target_list, predicted_list))
     low_dim_data = two_dims_from_z(dataset, model.expert3)

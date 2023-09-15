@@ -137,9 +137,9 @@ def moe_train_vib(model, dataset):
             _, predicted = outputs.max(1)
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
-            if batch_idx % 50 == 0:
+            if batch_idx % 100 == 0:
                 logger.info(f'batch_idx: {batch_idx}, experts ratio: {att_weights.sum(0).data.T}')
-                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/50, 4)}')
+                logger.info(f'batch_idx: {batch_idx}, loss: {round(running_loss/100, 4)}')
                 logger.info(f'batch_idx: {batch_idx}, supervised_loss: {round(supervised_loss.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, experts_loss_supervised: {round(experts_loss_supervised.item(), 4)}')
                 logger.info(f'batch_idx: {batch_idx}, kl_loss_balance: {round(kl_loss_balance.item(), 4)}')
