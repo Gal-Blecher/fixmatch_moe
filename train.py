@@ -76,7 +76,7 @@ def moe_train_vib(model, dataset):
             labeled_strong_augmented_images = [strong_transforms(image) for image in labeled_inputs]
             labeled_strong_augmented_tensors = torch.stack(labeled_strong_augmented_images).to(device)
 
-            outputs, att_weights = model(labeled_weak_augmented_tensors)
+            outputs, att_weights = model(labeled_strong_augmented_tensors)
             net_loss_supervised = criterion(outputs, targets)
             experts_loss_supervised = experts_loss(targets, att_weights.squeeze(2), model)
             kl_loss_balance = kl_divergence(att_weights.sum(0))
