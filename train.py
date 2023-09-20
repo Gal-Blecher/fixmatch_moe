@@ -194,8 +194,8 @@ def experts_loss(labels, att_weights, model):
     if model.n_experts == 2:
         experts_loss_ = torch.stack(
             (
-            criterion(model.expert1.out, labels),
-            criterion(model.expert2.out, labels)
+            criterion(model.expert1.out, labels) + setup['kl_vib_coeff'] * model.expert1.kl_loss,
+            criterion(model.expert2.out, labels) + setup['kl_vib_coeff'] * model.expert2.kl_loss
             )
             , dim=1)
 
