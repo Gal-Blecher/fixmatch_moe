@@ -15,9 +15,9 @@ def build_model():
 
 def create_experts():
     experts = []
-    if setup['expert_type']=='VIBNet':
+    if setup['expert_type']=='ifeel_fc':
         for e in range(setup['n_experts']):
-            experts.append(nets.VIBNet(e))
+            experts.append(nets.Ifeel_fc(e))
     return experts
 
 class AdditiveAttention(nn.Module):
@@ -52,7 +52,6 @@ class MoE(nn.Module):
             att_weights = self.router(z, z, z).permute(1,0,2)
         experts_out_ = torch.stack(experts_out_list, dim=0).permute(1, 2, 0)
         out = torch.bmm(experts_out_, att_weights)
-
 
         return out.squeeze(2), att_weights
 
