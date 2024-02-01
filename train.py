@@ -66,8 +66,8 @@ def moe_train(model, dataset):
 
             # unlabeled data
             unlabeled_inputs = unlabeled_data[0].to(device)
-            unlabeled_weak_augmented_tensors = add_gaussian_noise(labeled_inputs, std=0.01)
-            unlabeled_strong_augmented_tensors = add_gaussian_noise(labeled_inputs, std=0.1)
+            unlabeled_weak_augmented_tensors = add_gaussian_noise(unlabeled_inputs, std=0.01)
+            unlabeled_strong_augmented_tensors = add_gaussian_noise(unlabeled_inputs, std=0.1)
 
             unsupervied_loss_experts = 0
             for exp in range(1, setup['n_experts'] + 1): # the moe experts returns logits
@@ -76,7 +76,7 @@ def moe_train(model, dataset):
                 weak_unlabeled_z, weak_unlabeled_classification = expert(unlabeled_weak_augmented_tensors)
 
                 strong_unlabeled_z, strong_unlabeled_classification = expert(unlabeled_strong_augmented_tensors)
-                weak_unlabeled_classification_pseudo = (weak_unlabeled_classification > 0.5).float()
+                weak_unlabeled_classification_pseudo = (weak_unlabeled_classification > setup['confidence_th']).float()
 
                 confidence_mask = weak_unlabeled_classification.max(1)[0] > setup['confidence_th']
                 weak_unlabeled_classification_pseudo = weak_unlabeled_classification_pseudo[confidence_mask]

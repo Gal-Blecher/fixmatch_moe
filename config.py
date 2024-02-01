@@ -4,7 +4,7 @@
 setup = {'n_epochs': 200,
          'batch_size': 8,
          'lr': 0.01,
-         'router_lr': 0.001,
+         'router_lr': 0.01,
          'kl_coeff': 0.05,
          'experts_coeff': 1.0,
          'expert_type': 'ifeel_fc',
